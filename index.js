@@ -1,50 +1,53 @@
 const express = require('express');
-const bodyParser = require('body-parser');
 const cors = require('cors');
-const { OpenAI } = require('openai');
+const { Configuration, OpenAIApi } = require('openai');
 require('dotenv').config();
 
 const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json());
 
-const openai = new OpenAI({
+const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
 });
+const openai = new OpenAIApi(configuration);
 
 app.post('/analyze', async (req, res) => {
-  const { surahName, userTranscript } = req.body;
+  const { surahName, transcription } = req.body;
 
-  if (!surahName || !userTranscript) {
-    return res.status(400).json({ error: 'Missing required fields' });
+  if (!surahName || !transcription) {
+    return res.status(400).json({ error: 'Missing parameters' });
   }
 
   try {
-    const prompt = `Transkripsi berikut adalah hasil bacaan surah ${surahName}. Tugas Anda adalah mengevaluasi bacaan ini berdasarkan akurasi terhadap teks asli Al-Qur'an.\n\nTeks bacaan:\n${userTranscript}\n\nBerikan:\n1. Skor antara 0–100\n2. Penilaian: Sangat Baik / Baik / Cukup / Perlu Latihan\n3. Umpan balik untuk perbaikan.\n\nJawab dalam format JSON.`;
-
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
+    const completion = await openai.createChatCompletion({
+      model: 'gpt-4',
       messages: [
-        { role: "system", content: "Anda adalah guru tahsin ahli Al-Qur'an." },
-        { role: "user", content: prompt }
+        {
+          role: 'system',
+          content: `You are an expert Qur'an memorization evaluator.`,
+        },
+        {
+          role: 'user',
+          content: `Evaluate my memorization of Surah ${surahName}. This is the transcription of what I recited: ${transcription}`,
+        },
       ],
-      temperature: 0.3,
     });
 
-    const text = completion.choices[0].message.content;
-    res.json({ result: text });
-  } catch (error) {
-    console.error('GPT error:', error);
-    res.status(500).json({ error: 'Failed to analyze with GPT' });
+    const feedback = completion.data.choices[0].message.content;
+    res.json({ feedback });
+  } catch (err) {
+    console.error(err.response?.data || err.message);
+    res.status(500).json({ error: 'GPT evaluation failed' });
   }
 });
 
 app.get('/', (req, res) => {
-  res.send('GPT Analysis Server is running!');
+  res.send('GPT Deep Analysis Server is running!');
 });
 
 app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+  console.log(`Server is running on port ${port}`);
 });
