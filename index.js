@@ -16,7 +16,7 @@ app.get('/', (req, res) => {
   res.send('GPT Analysis Backend is running');
 });
 
-// Example Chat Completion Endpoint
+// Endpoint untuk analisis
 app.post('/analyze', async (req, res) => {
   const { prompt } = req.body;
 
@@ -28,13 +28,19 @@ app.post('/analyze', async (req, res) => {
 
     res.json({ result: completion.choices[0].message.content });
   } catch (error) {
-    console.error(error);
+    console.error('Error saat memanggil OpenAI API:', error);
     res.status(500).json({ error: 'AI request failed' });
   }
 });
 
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+// PENGATURAN PORT UNTUK RAILWAY
+const PORT = process.env.PORT;
 
+if (!PORT) {
+  // Baris ini memastikan aplikasi tidak akan berjalan jika variabel PORT tidak ada
+  throw new Error("Aplikasi harus berjalan pada port yang disediakan oleh environment variable PORT");
+}
+
+app.listen(PORT, () => {
+  console.log(`✅ Server berjalan pada port yang disediakan oleh Railway: ${PORT}`);
+});
