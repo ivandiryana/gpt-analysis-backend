@@ -1,35 +1,40 @@
-import OpenAI from 'openai';
 import express from 'express';
 import cors from 'cors';
-app.use(cors());
-const app = express();
-const port = process.env.PORT || 8080;
+import OpenAI from 'openai';
 
+const app = express();
+app.use(cors());
 app.use(express.json());
 
+// OPENAI SETUP
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY
 });
 
-app.post('/analyze', async (req, res) => {
-  try {
-    const userText = req.body.text;
+// ROUTES
+app.get('/', (req, res) => {
+  res.send('GPT Analysis Backend is running');
+});
 
+// Example Chat Completion Endpoint
+app.post('/analyze', async (req, res) => {
+  const { prompt } = req.body;
+
+  try {
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o',
-      messages: [
-        { role: 'system', content: 'You are an expert in Quran memorization analysis.' },
-        { role: 'user', content: userText },
-      ],
+      messages: [{ role: 'user', content: prompt }],
     });
 
     res.json({ result: completion.choices[0].message.content });
-  } catch (err) {
-    console.error('Error:', err);
-    res.status(500).json({ error: err.message || 'Unknown error' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'AI request failed' });
   }
 });
 
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
+
