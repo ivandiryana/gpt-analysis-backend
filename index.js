@@ -28,19 +28,11 @@ app.post('/analyze', async (req, res) => {
 
     res.json({ result: completion.choices[0].message.content });
   } catch (error) {
-    console.error('Error saat memanggil OpenAI API:', error);
+    console.error(JSON.stringify(error, null, 2));
     res.status(500).json({ error: 'AI request failed' });
   }
 });
 
-// PENGATURAN PORT UNTUK RAILWAY
-const PORT = process.env.PORT;
-
-if (!PORT) {
-  // Baris ini memastikan aplikasi tidak akan berjalan jika variabel PORT tidak ada
-  throw new Error("Aplikasi harus berjalan pada port yang disediakan oleh environment variable PORT");
-}
-
-app.listen(PORT, () => {
-  console.log(`✅ Server berjalan pada port yang disediakan oleh Railway: ${PORT}`);
-});
+// Vercel akan menangani server secara otomatis.
+// Tidak perlu app.listen()
+export default app;
