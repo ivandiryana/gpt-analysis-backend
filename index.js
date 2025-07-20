@@ -1,14 +1,14 @@
 import express from 'express';
 import cors from 'cors';
 import OpenAI from 'openai';
-import admin from 'firebase-admin'; // <-- TAMBAHKAN INI
+import admin from 'firebase-admin'; // <-- Tambahkan ini
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// --- SETUP FIREBASE ADMIN ---
-// Mengambil kunci dari environment variable yang sudah di-encode
+// --- SETUP FIREBASE ADMIN (WAJIB ADA) ---
+// Bagian ini membaca kunci rahasia dari environment variable
 const serviceAccount = JSON.parse(
   Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT, 'base64').toString('ascii')
 );
@@ -20,20 +20,19 @@ admin.initializeApp({
 const db = admin.firestore();
 // --- AKHIR SETUP FIREBASE ---
 
-
-// OPENAI SETUP
+// OPENAI SETUP (Ini sudah benar)
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
-// ROUTES
+// ROUTES (Ini sudah benar)
 app.get('/', (req, res) => {
   res.send('GPT Analysis Backend is running');
 });
 
 // Endpoint untuk analisis
 app.post('/analyze', async (req, res) => {
-  // --- 1. OTENTIKASI PENGGUNA ---
+  // --- BAGIAN 1: OTENTIKASI PENGGUNA ---
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(403).json({ error: 'Unauthorized: No token provided.' });
@@ -50,7 +49,7 @@ app.post('/analyze', async (req, res) => {
   const userRef = db.collection('users').doc(uid);
   // --- AKHIR OTENTIKASI ---
 
-  // --- 2. PENGURANGAN TOKEN (TRANSAKSI AMAN) ---
+  // --- BAGIAN 2: PENGURANGAN TOKEN ---
   try {
     await db.runTransaction(async (transaction) => {
       const userDoc = await transaction.get(userRef);
@@ -72,13 +71,12 @@ app.post('/analyze', async (req, res) => {
   }
   // --- AKHIR PENGURANGAN TOKEN ---
 
-  // --- 3. PROSES ANALISIS GPT ---
+  // --- BAGIAN 3: ANALISIS GPT (Kode asli Anda) ---
   try {
     const { transcription, correctText, surahName, partStart, partEnd } = req.body;
     
     if (!transcription || !correctText) {
-      // Jika data tidak lengkap, kembalikan token
-      await userRef.update({ ai_token: admin.firestore.FieldValue.increment(1) });
+      await userRef.update({ ai_token: admin.firestore.FieldValue.increment(1) }); // Kembalikan token
       return res.status(400).json({ error: 'transcription and correctText are required.' });
     }
 
@@ -88,12 +86,10 @@ app.post('/analyze', async (req, res) => {
 
     const detailedPrompt = `
       Anda adalah seorang guru ngaji (ahli tajwid) yang sangat sabar, ramah, dan memotivasi.
-
       Konteks Penting untuk Analisis Anda:
       1.  Latar Belakang Murid: Pahami bahwa murid adalah penutur asli Bahasa Indonesia, bukan Bahasa Arab. Oleh karena itu, dalam analisis Anda, berikan toleransi pada aksen atau pelafalan yang mungkin tidak sempurna seperti penutur asli Arab. Fokuslah pada kesalahan tajwid atau makhraj yang fundamental, bukan pada aksen kedaerahan yang wajar.
       2.  Konteks Transkripsi: Transkripsi bacaan murid dihasilkan oleh AI (Whisper), jadi mungkin ada sedikit ketidakakuratan pada teksnya. Abaikan kesalahan kecil pada transkripsi dan fokus pada esensi bacaan yang terdengar.
       3.  Tujuan Utama: Tujuan utama adalah untuk memotivasi murid agar terus belajar dan memperbaiki bacaannya, bukan untuk menghakimi atau membuat mereka merasa kecil hati.
-
       Instruksi untuk Memberikan Respons:
       - Gunakan bahasa Indonesia yang positif dan membangun.
       - Awali respons dengan kalimat pujian atau penyemangat (contoh: "MasyaAllah, usaha Anda untuk belajar sudah luar biasa...").
@@ -101,7 +97,6 @@ app.post('/analyze', async (req, res) => {
       - Jelaskan letak kesalahan dengan sopan dan berikan saran perbaikan yang praktis.
       - Akhiri dengan kalimat motivasi untuk terus belajar.
       - Gunakan format Markdown agar mudah dibaca (misalnya, poin-poin dengan tanda bintang * atau penomoran).
-
       Berikut adalah datanya untuk dianalisis:
       - Surah yang dibaca: ${surahName} ${ayatRange}
       - Teks Ayat yang Benar: "${correctText}"
@@ -116,8 +111,7 @@ app.post('/analyze', async (req, res) => {
     res.json({ analysis: completion.choices[0].message.content });
   } catch (error) {
     console.error('Error during OpenAI API call:', JSON.stringify(error, null, 2));
-    // --- 4. KEMBALIKAN TOKEN JIKA GPT GAGAL ---
-    await userRef.update({ ai_token: admin.firestore.FieldValue.increment(1) });
+    await userRef.update({ ai_token: admin.firestore.FieldValue.increment(1) }); // Kembalikan token jika GPT gagal
     res.status(500).json({ error: 'AI request failed' });
   }
 });
