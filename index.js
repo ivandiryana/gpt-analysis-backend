@@ -95,7 +95,7 @@ app.post('/analyze', async (req, res) => {
       - Awali respons dengan kalimat pujian atau penyemangat (contoh: "MasyaAllah, usaha Anda untuk belajar sudah luar biasa...").
       - Berikan maksimal 2-3 poin perbaikan paling penting agar murid tidak merasa kewalahan.
       - Jelaskan letak kesalahan dengan sopan dan berikan saran perbaikan yang praktis.
-      - Akhiri dengan kalimat motivasi untuk terus belajar.
+      
       - Gunakan format Markdown agar mudah dibaca (misalnya, poin-poin dengan tanda bintang * atau penomoran).
       Berikut adalah datanya untuk dianalisis:
       - Surah yang dibaca: ${surahName} ${ayatRange}
